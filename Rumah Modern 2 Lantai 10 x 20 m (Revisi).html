@@ -1,0 +1,135 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>Rumah Modern 2 Lantai 10 x 20 m (Revisi)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f6f4ef;--fg:#222;--card:#fff;--mut:#666;--bd:#d9d4c8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1d20;--fg:#eee;--card:#2a2b2f;--mut:#aaa;--bd:#44454a}}
+:root[data-theme="dark"]{--bg:#1c1d20;--fg:#eee;--card:#2a2b2f;--mut:#aaa;--bd:#44454a}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:1.3rem;margin:0 0 4px}p{color:var(--mut);margin:0 0 12px;font-size:.9rem}
+#cv{width:100%;height:62vh;min-height:320px;background:var(--card);border:1px solid var(--bd);border-radius:12px;touch-action:none;display:block}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+button{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:.85rem;cursor:pointer}
+button.on{background:#2f7d6d;color:#fff;border-color:#2f7d6d}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.c h2{font-size:1rem;margin:0 0 6px}.c div{display:flex;justify-content:space-between;gap:8px;font-size:.82rem;padding:2px 0}
+.t{font-size:.82rem;line-height:1.55}
+</style></head><body><main>
+<h1>Rumah Modern 2 Lantai di Tanah 10 x 20 m (Revisi)</h1>
+<p>Geser untuk memutar, cubit atau scroll untuk zoom. Jalan ada di sisi depan (bawah denah). Untuk melihat ruangan: Lantai 1, Lantai 2, atau Denah atas.</p>
+<canvas id="cv"></canvas>
+<div class="bar" id="bar"></div>
+<div class="g"><div class="c"><h2>Lantai 1 (tinggi 3,2 m)</h2><span id="l1"></span></div><div class="c"><h2>Lantai 2 (tinggi 3,0 m)</h2><span id="l2"></span></div>
+<div class="c"><h2>Hitungan &amp; catatan teknis</h2><div class="t">Tanah 200 m². Sempadan: depan 2 m, samping 1 m, belakang 3 m.<br>
+<b>KDB</b> = (116 m² lantai 1 + 4 m² kanopi jemur) / 200 = <b>60%</b> (maks 60%).<br>
+<b>KLB</b> = (116 + 101) / 200 = <b>±1,1</b> (balkon 10 m² tidak dihitung).<br>
+<b>Tangga:</b> 19 tanjakan x 16,8 cm, injakan 27 cm, lebar 90 cm, bordes 100 x 200 cm, model U.<br>
+<b>Grid kolom:</b> x = 1, 5, 9 m; z = 2, 6, 10, 14, 17 m (bentang 3 sampai 4 m).<br>
+<b>Garasi:</b> 5,5 x 6 m, pintu 4,6 m. Mobil 4,5 x 1,8 m dengan ruang buka pintu 0,9 m; 3 motor sejajar di sisi kanan.<br>
+<b>Atap dak</b> dengan kemiringan 1 sampai 2% ke talang, overhang 70 cm. Septic tank dan sumur resapan di belakang kiri, tandon air di belakang kanan.</div></div></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// nama,x1,x2,z1,z2,lantai,warna,dinding(1 penuh, 0 tanpa, .9 railing, -1 tanpa label)
+const R=[
+['Garasi',1,6.5,2,8,1,'#c4c9d1',1],['Teras',6.5,9,2,8,1,'#d8c9a8',0],['Tangga',1,3,8,12,1,'#cdb89a',0],['Foyer',3,5,8,10,1,'#e0d4bd',0],
+['Gudang',3,5,10,12,1,'#b9b1a4',1],['R. Tamu',5,9,8,12,1,'#e7d3b0',1],['WC Tamu',1,3,12,14,1,'#a9cfe0',1],['Taman dalam',3,5,12,14,1,'#b8b6b0',1],
+['R. Keluarga',1,5,14,17,1,'#e9c9a0',1],['Makan + Dapur',5,9,12,17,1,'#f0e0a8',1],['Cuci + Jemur',5,9,17,20,1,'#bcd9e6',0],
+['R. Kerja',1,5,2,7,2,'#c8dcc0',1],['R. Belajar',5,7,2,7,2,'#f0e0a8',1],['Balkon',7,9,2,7,2,'#cfcabf',.9],['Koridor',1,9,7,8,2,'#e7d3b0',0],
+['Bordes',1,3,8,8.57,2,'#e7d3b0',-1],['Hall',3,5,8,12,2,'#e7d3b0',0],['R. Santai',5,9,8,11,2,'#e8cfd2',1],['KM Utama',5,7,11,13,2,'#a9cfe0',1],
+['WIC',7,9,11,13,2,'#d9d2e9',1],['Void',3,4,12,14,2,'#b8b6b0',.9],['Jalur',4,5,12,14,2,'#e7d3b0',-1],['KM Anak',1,3,12,14,2,'#a9cfe0',1],
+['KT Anak',1,5,14,17,2,'#c9dcf0',1],['KT Utama',5,9,13,17,2,'#e8cfd2',1]];
+const H=3,Y2=3.2,B1=.12,B2=3.32,sc=new THREE.Scene(),cv=document.getElementById('cv');
+const cam=new THREE.PerspectiveCamera(40,1,.1,300),ren=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+sc.add(new THREE.AmbientLight(0xffffff,.75));const dl=new THREE.DirectionalLight(0xffffff,.55);dl.position.set(-10,25,-15);sc.add(dl);
+const GA=new THREE.Group(),G1=new THREE.Group(),G2=new THREE.Group(),GR=new THREE.Group();sc.add(GA,G1,G2,GR);
+const walls=[],LB=[],seen={};
+function box(w,h,d,c,x,y,z,g,o){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:c,transparent:!!o,opacity:o||1}));m.position.set(x-5,y,z-10);g.add(m);return m}
+function wall(x1,z1,x2,z2,y,h,g){const k=[x1,z1,x2,z2,y,h]+'';if(seen[k])return;seen[k]=1;
+ const m=box(Math.abs(x2-x1)+.15,h,Math.abs(z2-z1)+.15,'#f3eee4',(x1+x2)/2,y+h/2,(z1+z2)/2,g,.6);walls.push(m);
+ const e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0x777777}));e.position.copy(m.position);g.add(e)}
+function lab(t,s,x,y,z,g){const c=document.createElement('canvas');c.width=320;c.height=120;const q=c.getContext('2d');
+ q.fillStyle='rgba(255,255,255,.9)';q.fillRect(0,0,320,120);q.fillStyle='#222';q.textAlign='center';q.font='bold 34px sans-serif';q.fillText(t,160,52);q.font='28px sans-serif';q.fillText(s,160,92);
+ const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));sp.scale.set(2.2,.82,1);sp.position.set(x-5,y,z-10);g.add(sp);LB.push(sp)}
+const F=(x,z,w,d,h,c,y,g)=>box(w,h,d,c,x,y+h/2,z,g);
+// tanah, jalan, paving
+box(10,.2,20,'#b9b7b1',5,-.1,10,GA);box(16,.2,5,'#6b6e75',5,-.11,-2.5,GA);
+const ol=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(10,.2,20)),new THREE.LineBasicMaterial({color:0x333333}));ol.position.y=-.1;GA.add(ol);
+// ruang
+R.forEach(([n,x1,x2,z1,z2,f,c,h])=>{const g=f==1?G1:G2,y=f==1?B1:B2,w=x2-x1,d=z2-z1,a=Math.round(w*d*100)/100;
+ if(n!='Void')box(w-.02,.12,d-.02,c,(x1+x2)/2,y-.06,(z1+z2)/2,g);
+ const hh=h==1?(f==1?3.2:3):h;
+ if(hh>0){wall(x1,z1,x2,z1,y,hh,g);wall(x1,z2,x2,z2,y,hh,g);wall(x1,z1,x1,z2,y,hh,g);wall(x2,z1,x2,z2,y,hh,g)}
+ if(h>=0&&n!='Void'&&n!='Jalur')lab(n,a+' m²',(x1+x2)/2,y+(hh>=1?1.6:1),(z1+z2)/2,g);
+ if(h>=0&&n!='Jalur'){const el=document.getElementById(f==1?'l1':'l2');el.innerHTML+=`<div><span>${n}</span><b>${w} × ${+d.toFixed(2)} m (${a} m²)</b></div>`}});
+wall(1,8,1,12,B1,3.2,G1);wall(1,7,1,12,B2,3,G2);wall(9,7,9,8,B2,3,G2);wall(3,8.57,3,12,B2,.9,G2);
+// atap dak datar overhang 70 cm
+{const s=new THREE.Shape();s.moveTo(-4.7,0);s.lineTo(4.7,0);s.lineTo(4.7,.3);s.lineTo(-4.7,.3);s.closePath();
+const m=new THREE.Mesh(new THREE.ExtrudeGeometry(s,{depth:16.4,bevelEnabled:false}),new THREE.MeshLambertMaterial({color:'#3a3d45'}));m.position.set(0,B2+H,-8.7);GR.add(m);
+const t=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0x888888}));t.position.copy(m.position);GR.add(t)}
+// tangga U: 19 tanjakan 16,8 cm, injakan 27 cm, lebar 90 cm, bordes
+const r=3.2/19,SC='#a58c6a';
+for(let i=1;i<=8;i++)box(.9,i*r,.27,SC,1.55,B1+i*r/2,8.84+(i-.5)*.27,G1);
+box(2,9*r,1,SC,2,B1+9*r/2,11.5,G1);
+for(let j=10;j<=18;j++)box(.9,j*r,.27,SC,2.55,B1+j*r/2,11-(j-9.5)*.27,G1);
+// kendaraan (tanpa tumpang tindih): mobil 1,8 x 4,5; motor 0,7 x 1,8
+F(2.8,5.25,1.8,4.5,1.3,'#c0392b',B1,G1);[4.35,5.05,5.75].forEach(x=>F(x,4.4,.7,1.8,.9,'#2c3e50',B1,G1));
+// pintu & jendela: [arah,garis,tengah,lebar,y,tinggi,warna]
+const GL='#6fb7e0',DR='#6b4a2f',SH='#8b97a6',DW='#b58a5c';
+[['z',2,3.75,4.6,.12,2.4,SH],['z',8,4,.9,.12,2.1,DR],['z',8,7.75,1.1,.12,2.2,DR],['x',5,9,.9,.12,2.1,DR],['x',9,10,1.6,2.1,.5,GL],
+['z',10,4,.8,.12,2.1,DR],['z',14,2,.8,.12,2.1,DR],['x',1,13,.8,2.1,.4,GL],['z',17,3,2.4,.8,1.6,GL],['x',1,15.5,1.2,2.1,.5,GL],
+['z',14,4,1.6,.12,2.2,GL],['x',5,15.5,1.6,.12,2.2,DW],['z',17,6.4,1.4,1.1,1,GL],['z',17,8.2,.9,.12,2.1,DR],['z',12,7,.9,.12,2.1,DR],['x',9,14,1.5,2.1,.5,GL],
+['z',2,3,2.4,4.1,1.3,GL],['z',7,4,.9,B2,2.1,DR],['x',1,4.5,1.2,5.4,.5,GL],['z',2,6,1.2,4.1,1.3,GL],['z',7,6,.9,B2,2.1,DR],['x',7,4,.9,B2,2.2,GL],
+['x',5,9.5,1.6,B2,2.1,DW],['x',9,9.5,1.2,5.4,.5,GL],['z',13,5.9,.8,B2,2.1,DR],['z',13,8,.8,B2,2.1,DR],['z',17,7,2.2,4.1,1.3,GL],['x',9,15,1.2,5.4,.5,GL],
+['x',5,13.5,.9,B2,2.1,DR],['z',17,3,2.2,4.1,1.3,GL],['x',1,15.5,1.2,5.4,.5,GL],['z',14,4.5,.9,B2,2.1,DR],['z',14,2,.8,B2,2.1,DR],['x',1,13,.8,5.4,.4,GL]
+].forEach(([d,k,p,w,y,h,c])=>{const z=d=='z';box(z ? w : .22,h,z ? .22 : w,c,z ? p : k,y+h/2,z ? k : p,y>3?G2:G1)});
+// furnitur
+[[7,11.3,2.4,.9,.6,'#6b7a8f',1],[7,10,1,.6,.4,'#9a6b45',1],[3,16.4,2.4,.9,.6,'#6b7a8f',1],[1.3,15.5,.4,1.6,.5,'#444',1],[3,15.3,1,.6,.4,'#9a6b45',1],
+[7,13.2,1.6,.9,.75,'#9a6b45',1],[7,16.7,3.4,.6,.9,'#d9d9d9',1],[8.6,15.6,.6,1.8,.9,'#d9d9d9',1],[4,11,1.4,.4,1.6,'#9a6b45',1],[5.6,17.5,.6,.6,.85,'#eee',1],
+[7.6,15.5,1.8,2,.5,'#d9d3c7',2],[5.4,15.5,.5,1.6,2,'#8a6a4a',2],[2.2,15.8,1,2,.45,'#c9dcf0',2],[1.3,16.4,.5,1.2,2,'#8a6a4a',2],
+[3,2.8,1.6,.7,.75,'#9a6b45',2],[1.3,5,.4,2.4,1.8,'#9a6b45',2],[6,2.8,1.4,.6,.75,'#9a6b45',2],[7,9.8,2.2,.9,.6,'#6b7a8f',2]
+].forEach(([x,z,w,d,h,c,f])=>F(x,z,w,d,h,c,f==1?B1:B2,f==1?G1:G2));
+// kolom penyangga balkon, kisi-kisi secondary skin
+[7.1,8.9].forEach(x=>box(.25,3.1,.25,'#2b2d33',x,1.6,2.1,G1));
+for(let i=0;i<7;i++)box(.05,3,.08,'#9a6b45',7.1+i*.3,B2+1.5,2,G2);
+// kanopi jemur 1 m dari dak, jemuran
+box(4,.06,1,'#bfe3ee',7,3.0,17.5,G1,.6);[5.1,8.9].forEach(x=>box(.1,2.9,.1,'#2b2d33',x,1.5,17.9,G1));
+box(3.6,.03,.03,'#555',7,2.6,18.3,G1);box(3.6,.03,.03,'#555',7,2.6,19,G1);
+// pagar, gerbang, tembok keliling
+const FC='#e9e6df',GT='#2b2d33',WD='#9a6b45';
+[.2,6.6,8.2,9.8].forEach(x=>box(.4,1.9,.4,FC,x,.95,.15,GA));
+box(6,1.6,.1,GT,3.4,.9,.1,GA);for(let i=0;i<4;i++)box(5.9,.07,.12,WD,3.4,.4+i*.35,.1,GA);
+box(1.2,1.7,.08,GT,7.4,.95,.1,GA);box(1.2,1.2,.15,FC,9,.7,.15,GA);
+box(.15,1.8,20,FC,.075,.9,10,GA);box(.15,1.8,20,FC,9.925,.9,10,GA);box(10,1.8,.15,FC,5,.9,19.925,GA);
+// taman kecil
+function pl(x,z,s){box(.08,.5,.08,'#6b4a2f',x,.25,z,GA);const b=new THREE.Mesh(new THREE.SphereGeometry(s,10,8),new THREE.MeshLambertMaterial({color:'#4a8f55'}));b.position.set(x-5,.5+s,z-10);GA.add(b)}
+box(2,.05,1.2,'#7fb069',8,.03,1.1,GA);pl(7.5,1.1,.3);pl(8.5,1.1,.3);pl(4,13,.5);
+// septic tank, sumur resapan, tandon air
+box(1.8,.12,1.4,'#8a7d6c',2.3,.03,19,GA);lab('Septic tank','',2.3,.9,19,GA);
+const sw=new THREE.Mesh(new THREE.CylinderGeometry(.6,.6,.1,16),new THREE.MeshLambertMaterial({color:'#8a7d6c'}));sw.position.set(-.8,.03,9);GA.add(sw);lab('Sumur resapan','',4.2,.9,19,GA);
+box(.9,1.8,.9,'#9aa6b2',8.5,.9,19.2,GA);lab('Tandon air','',8.5,2.4,19.2,GA);
+// kamera orbit
+let az=3.6,el=.5,dist=36;const T=new THREE.Vector3(0,2,0);
+function upd(){dist=Math.min(70,Math.max(12,dist));el=Math.min(1.5,Math.max(.1,el));
+ cam.position.set(T.x+dist*Math.cos(el)*Math.sin(az),T.y+dist*Math.sin(el),T.z+dist*Math.cos(el)*Math.cos(az));cam.lookAt(T)}
+const P={};cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);P[e.pointerId]=[e.clientX,e.clientY]};
+cv.onpointerup=cv.onpointercancel=e=>{delete P[e.pointerId]};
+cv.onpointermove=e=>{const p=P[e.pointerId];if(!p)return;const ids=Object.keys(P),n=[e.clientX,e.clientY];
+ if(ids.length==1){az-=(n[0]-p[0])*.008;el+=(n[1]-p[1])*.008}
+ else{const o=P[ids.find(i=>i!=e.pointerId)];dist*=Math.hypot(p[0]-o[0],p[1]-o[1])/Math.hypot(n[0]-o[0],n[1]-o[1])}
+ P[e.pointerId]=n;upd()};
+cv.onwheel=e=>{e.preventDefault();dist*=1+e.deltaY*.001;upd()};
+function size(){const w=cv.clientWidth,h=cv.clientHeight;ren.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+addEventListener('resize',size);
+let mode='all',roof=true,tr=false;
+function apply(){G1.visible=mode!='l2';G2.visible=mode!='l1';GR.visible=roof&&mode=='all';LB.forEach(s=>s.visible=!GR.visible);walls.forEach(m=>m.material.opacity=tr ? .5 : 1);
+ [...bar.children].forEach(b=>{const k=b.dataset.k;b.classList.toggle('on',k==mode||(k=='roof'&&roof)||(k=='tr'&&tr))})}
+const bar=document.getElementById('bar');
+[['out','Tampak luar'],['all','Semua lantai'],['l1','Lantai 1'],['l2','Lantai 2'],['top','Denah atas'],['roof','Atap'],['tr','Dinding transparan']].forEach(([k,t])=>{
+ const b=document.createElement('button');b.textContent=t;b.dataset.k=k;b.onclick=()=>{
+  if(k=='roof')roof=!roof;else if(k=='tr')tr=!tr;else if(k=='out'){mode='all';roof=true;tr=false;el=.5;az=3.6}
+  else if(k=='top'){mode='all';roof=false;tr=true;el=1.5;az=Math.PI}else{mode=k;roof=false;tr=true;el=.9}
+  apply();upd()};bar.appendChild(b)});
+size();upd();apply();(function loop(){requestAnimationFrame(loop);ren.render(sc,cam)})();
+</script></body></html>
